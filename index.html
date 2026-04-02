@@ -1,0 +1,1244 @@
+import { useState, useEffect, useRef, useCallback } from "react";
+
+// ═══════════════════════════════════════════════════════════════
+// GLOBAL STYLES
+// ═══════════════════════════════════════════════════════════════
+const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400&family=Outfit:wght@300;400;500;600;700&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:#070b14;font-family:'Outfit',sans-serif;color:#dde6ff;line-height:1.6;overflow-x:hidden}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#1e3060;border-radius:5px}
+
+:root{
+  --bg:#070b14; --s1:#0c1626; --s2:#111e38; --s3:#172544;
+  --acc:#4b9fff; --acc2:#2563eb; --gold:#f5c842; --green:#34d89a;
+  --red:#f87171; --pink:#f472b6;
+  --text:#dde6ff; --muted:#5a7099; --border:#1d3060;
+  --r:14px; --rd:'Fraunces',Georgia,serif; --rb:'Outfit',sans-serif;
+  --shadow: 0 20px 60px rgba(0,0,0,.5);
+}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes float{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-12px) rotate(1deg)}}
+@keyframes glow{0%,100%{opacity:.4}50%{opacity:.9}}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes shimmer{from{background-position:-200% center}to{background-position:200% center}}
+@keyframes borderGlow{0%,100%{border-color:rgba(75,159,255,.3)}50%{border-color:rgba(75,159,255,.8)}}
+@keyframes progressBar{from{width:0}to{width:var(--prog)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+@keyframes orbit{from{transform:rotate(0deg) translateX(80px) rotate(0deg)}to{transform:rotate(360deg) translateX(80px) rotate(-360deg)}}
+
+.fu{animation:fadeUp .55s cubic-bezier(.16,1,.3,1) both}
+.fi{animation:fadeIn .4s ease both}
+.d1{animation-delay:.07s}.d2{animation-delay:.14s}.d3{animation-delay:.21s}
+.d4{animation-delay:.28s}.d5{animation-delay:.35s}.d6{animation-delay:.42s}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 24px;border-radius:10px;border:none;font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s cubic-bezier(.16,1,.3,1);letter-spacing:.02em;white-space:nowrap}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
+.bp{background:linear-gradient(135deg,#4b9fff 0%,#2563eb 100%);color:#fff;box-shadow:0 4px 20px rgba(75,159,255,.3)}
+.bp:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 30px rgba(75,159,255,.5)}
+.bg2{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.bg2:hover{border-color:var(--acc);color:var(--acc);background:rgba(75,159,255,.07)}
+.bgold{background:linear-gradient(135deg,#f5c842,#e6921a);color:#1a0800;font-weight:600;box-shadow:0 4px 20px rgba(245,200,66,.25)}
+.bgold:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 30px rgba(245,200,66,.4)}
+.bsm{padding:7px 16px;font-size:12.5px;border-radius:8px}
+.bdanger{background:rgba(248,113,113,.1);color:#f87171;border:1px solid rgba(248,113,113,.2)}
+.bdanger:hover{background:rgba(248,113,113,.2)}
+.bgreen{background:rgba(52,216,154,.1);color:#34d89a;border:1px solid rgba(52,216,154,.2)}
+.bgreen:hover{background:rgba(52,216,154,.2)}
+
+/* INPUTS */
+input[type=text],input[type=email],input[type=tel],input[type=url],input[type=date],textarea,select{
+  width:100%;background:var(--s1);border:1px solid var(--border);border-radius:10px;
+  padding:10px 14px;color:var(--text);font-family:'Outfit',sans-serif;font-size:13.5px;
+  outline:none;transition:border-color .2s,box-shadow .2s;resize:vertical;
+  -webkit-appearance:none;
+}
+input:focus,textarea:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(75,159,255,.12)}
+input::placeholder,textarea::placeholder{color:var(--muted)}
+select option{background:#111e38}
+input[type=checkbox]{width:auto;cursor:pointer;accent-color:var(--acc)}
+label.lbl{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
+
+/* CARDS */
+.card{background:var(--s2);border:1px solid var(--border);border-radius:var(--r)}
+.card-glow{background:var(--s2);border:1px solid rgba(75,159,255,.2);border-radius:var(--r);box-shadow:0 0 30px rgba(75,159,255,.05)}
+
+/* GRID */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px}
+@media(max-width:680px){.g2,.g3,.g4{grid-template-columns:1fr}}
+@media(max-width:900px){.g3{grid-template-columns:1fr 1fr}}
+
+/* CHIP / TAG */
+.chip{display:inline-block;background:rgba(75,159,255,.12);color:var(--acc);border:1px solid rgba(75,159,255,.2);border-radius:20px;padding:3px 12px;font-size:12px;font-weight:500}
+.chip-gold{background:rgba(245,200,66,.1);color:var(--gold);border-color:rgba(245,200,66,.25)}
+.chip-green{background:rgba(52,216,154,.1);color:var(--green);border-color:rgba(52,216,154,.25)}
+
+/* ════════════════════════════════
+   RESUME TEMPLATES
+   ════════════════════════════════ */
+.resume-wrap{background:white;font-family:'Georgia',Times,'Times New Roman',serif;color:#1a202c;
+  border-radius:8px;overflow:hidden;box-shadow:var(--shadow)}
+
+/* — CLASSIC — */
+.rc{padding:48px 56px;min-height:600px}
+.rc-name{font-size:28px;font-weight:700;letter-spacing:.01em;color:#0f172a;margin-bottom:2px}
+.rc-title{font-size:13px;color:#475569;letter-spacing:.06em;text-transform:uppercase;margin-bottom:14px;font-family:'Georgia',serif}
+.rc-contact{display:flex;flex-wrap:wrap;gap:18px;font-size:12px;color:#475569;padding:10px 0;border-top:2px solid #0f172a;border-bottom:1px solid #e2e8f0;margin-bottom:22px}
+.rc-contact span{display:flex;align-items:center;gap:5px}
+.rc h2{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:#0f172a;border-bottom:1.5px solid #0f172a;padding-bottom:5px;margin:20px 0 12px}
+.rc-entry{margin-bottom:14px}
+.rc-entry-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px}
+.rc-bold{font-weight:700;font-size:13.5px;color:#0f172a}
+.rc-date{font-size:11.5px;color:#64748b;font-style:italic}
+.rc-sub{font-size:12.5px;color:#475569;margin-bottom:5px}
+.rc ul{padding-left:18px;margin-top:5px}
+.rc li{font-size:12.5px;color:#334155;margin-bottom:3px;line-height:1.45}
+.rc-summary{font-size:13px;color:#334155;line-height:1.6}
+.rc-skills{display:flex;flex-wrap:wrap;gap:6px}
+.rc-skill{background:#f1f5f9;color:#334155;border:1px solid #e2e8f0;padding:3px 10px;border-radius:4px;font-size:12px}
+
+/* — MODERN — */
+.rm{display:flex;min-height:600px}
+.rm-side{background:#0f172a;color:#f1f5f9;width:210px;min-width:210px;padding:36px 22px;flex-shrink:0}
+.rm-main{flex:1;padding:36px 32px;background:white}
+.rm-side-name{font-size:19px;font-weight:700;color:white;line-height:1.3;margin-bottom:3px}
+.rm-side-title{font-size:10.5px;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.12em;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.1)}
+.rm-side h3{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:rgba(255,255,255,.45);margin:18px 0 8px}
+.rm-side-item{font-size:11.5px;color:rgba(255,255,255,.78);margin-bottom:4px;line-height:1.4;word-break:break-all}
+.rm-side-skill{display:inline-block;background:rgba(75,159,255,.2);color:rgba(255,255,255,.85);padding:3px 9px;border-radius:4px;font-size:11px;margin:2px 2px 0 0;font-family:sans-serif}
+.rm-main h2{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:#3b82f6;padding-bottom:5px;border-bottom:1px solid #e8f0fe;margin:18px 0 12px}
+.rm-main h2:first-child{margin-top:0}
+.rm-entry-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px}
+.rm-bold{font-weight:700;font-size:13px;color:#0f172a}
+.rm-date{font-size:11px;color:#94a3b8;font-style:italic}
+.rm-sub{font-size:12px;color:#3b82f6;margin-bottom:4px;font-weight:500}
+.rm ul{padding-left:16px}
+.rm li{font-size:12px;color:#334155;margin-bottom:3px;line-height:1.4}
+.rm-summary{font-size:12.5px;color:#334155;line-height:1.5}
+.rm-skills-row{display:flex;flex-wrap:wrap;gap:5px}
+.rm-skill-tag{background:#eff6ff;color:#1d4ed8;border:1px solid #dbeafe;padding:2px 9px;border-radius:4px;font-size:11.5px}
+
+/* — MINIMAL — */
+.rmin{padding:52px 60px;min-height:600px;font-family:'Helvetica Neue',Arial,sans-serif}
+.rmin-name{font-size:30px;font-weight:300;letter-spacing:.06em;color:#0f172a;margin-bottom:2px}
+.rmin-title{font-size:11.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.22em;margin-bottom:18px}
+.rmin-contact{display:flex;flex-wrap:wrap;gap:22px;font-size:11.5px;color:#94a3b8;margin-bottom:32px;padding-bottom:20px;border-bottom:1px solid #f1f5f9}
+.rmin h2{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.22em;color:#64748b;margin:26px 0 2px}
+.rmin hr{border:none;border-top:1px solid #f1f5f9;margin-bottom:14px}
+.rmin-bold{font-size:13px;font-weight:600;color:#0f172a;display:inline}
+.rmin-date{font-size:11px;color:#cbd5e1;float:right;font-weight:300}
+.rmin-sub{font-size:12px;color:#64748b;margin-bottom:4px;clear:both}
+.rmin ul{padding-left:0;list-style:none;margin-top:4px}
+.rmin li{font-size:12px;color:#475569;margin-bottom:3px;padding-left:14px;position:relative}
+.rmin li::before{content:'—';position:absolute;left:0;color:#cbd5e1}
+.rmin-summary{font-size:12.5px;color:#475569;line-height:1.6;font-weight:300}
+.rmin-skills-row{display:flex;flex-wrap:wrap;gap:2px}
+.rmin-skill::after{content:' · ';color:#cbd5e1}
+.rmin-skill:last-child::after{content:''}
+.rmin-skill{font-size:12px;color:#475569}
+.rmin-entry{margin-bottom:14px;overflow:hidden}
+.rmin-entry::after{content:'';display:table;clear:both}
+
+/* PORTFOLIO PAGE */
+.pf-root{background:#040710;font-family:'Outfit',sans-serif;color:#dde6ff;min-height:100vh}
+.pf-nav{position:sticky;top:0;z-index:100;background:rgba(4,7,16,.85);backdrop-filter:blur(24px);border-bottom:1px solid rgba(29,48,96,.4);padding:14px 0}
+.pf-container{max-width:960px;margin:0 auto;padding:0 28px}
+.pf-hero{padding:110px 0 80px;text-align:center;position:relative;overflow:hidden}
+.pf-section{padding:80px 0}
+.pf-section-alt{background:rgba(13,22,48,.4)}
+.pf-section-title{font-family:'Fraunces',serif;font-size:11px;font-weight:400;text-transform:uppercase;letter-spacing:.2em;color:var(--acc);margin-bottom:8px}
+.pf-section-h{font-family:'Fraunces',serif;font-size:32px;font-weight:600;color:#e8eeff;margin-bottom:16px}
+.pf-card{background:#0c1626;border:1px solid #1d3060;border-radius:12px;padding:24px;transition:transform .2s,border-color .2s}
+.pf-card:hover{transform:translateY(-3px);border-color:rgba(75,159,255,.3)}
+.pf-skill-bar{background:#111e38;border-radius:6px;height:6px;margin-top:6px;overflow:hidden}
+.pf-skill-fill{background:linear-gradient(90deg,#4b9fff,#7c3aed);height:100%;border-radius:6px;transition:width .8s cubic-bezier(.16,1,.3,1)}
+
+/* PRINT */
+@media print{
+  body>*{display:none!important}
+  #print-zone{display:block!important;position:fixed;inset:0;background:white;z-index:99999;overflow:auto;padding:20px}
+}
+#print-zone{display:none}
+
+/* RESPONSIVE */
+@media(max-width:760px){
+  .rm{flex-direction:column}
+  .rm-side{width:100%;padding:24px 20px}
+  .rc{padding:28px 24px}
+  .rmin{padding:32px 28px}
+}
+`;
+
+// ═══════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════
+const uid = () => Math.random().toString(36).slice(2, 9);
+const initData = () => ({
+  name: "", title: "", email: "", phone: "", location: "", website: "", linkedin: "", github: "",
+  summary: "",
+  education: [{ id: uid(), school: "", degree: "", field: "", start: "", end: "", gpa: "", honors: "" }],
+  skills: "",
+  experience: [{ id: uid(), company: "", role: "", start: "", end: "", current: false, bullets: "" }],
+  projects: [{ id: uid(), name: "", tech: "", description: "", link: "" }],
+  certifications: [{ id: uid(), name: "", issuer: "", date: "" }],
+  achievements: "",
+});
+const STEPS = ["Personal Info", "Education", "Skills", "Experience", "Projects", "Certifications", "Achievements"];
+const STEP_ICONS = ["◈", "◉", "⚡", "◆", "◎", "★", "✦"];
+
+// ═══════════════════════════════════════════════════════════════
+// RESUME TEMPLATES (rendered HTML)
+// ═══════════════════════════════════════════════════════════════
+function ResumeClassic({ d }) {
+  const skills = d.skills.split(/[,\n]+/).map(s => s.trim()).filter(Boolean);
+  const achievements = d.achievements.split("\n").filter(Boolean);
+  return (
+    <div className="resume-wrap">
+      <div className="rc">
+        <div className="rc-name">{d.name || "Your Name"}</div>
+        <div className="rc-title">{d.title || "Professional Title"}</div>
+        <div className="rc-contact">
+          {d.email && <span>✉ {d.email}</span>}
+          {d.phone && <span>✆ {d.phone}</span>}
+          {d.location && <span>⌖ {d.location}</span>}
+          {d.website && <span>⊕ {d.website}</span>}
+          {d.linkedin && <span>in {d.linkedin}</span>}
+          {d.github && <span>⌂ {d.github}</span>}
+        </div>
+        {d.summary && <><h2>Professional Summary</h2><p className="rc-summary">{d.summary}</p></>}
+        {d.experience.some(e => e.company) && <>
+          <h2>Experience</h2>
+          {d.experience.filter(e => e.company).map(e => (
+            <div key={e.id} className="rc-entry">
+              <div className="rc-entry-head">
+                <span className="rc-bold">{e.role}</span>
+                <span className="rc-date">{e.start}{e.start && (e.end || e.current) ? " – " : ""}{e.current ? "Present" : e.end}</span>
+              </div>
+              <div className="rc-sub">{e.company}</div>
+              {e.bullets && <ul>{e.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i}>{b.replace(/^[-•]\s*/, "")}</li>)}</ul>}
+            </div>
+          ))}
+        </>}
+        {d.education.some(e => e.school) && <>
+          <h2>Education</h2>
+          {d.education.filter(e => e.school).map(e => (
+            <div key={e.id} className="rc-entry">
+              <div className="rc-entry-head">
+                <span className="rc-bold">{e.degree}{e.field ? ` in ${e.field}` : ""}</span>
+                <span className="rc-date">{e.start}{e.start && e.end ? " – " : ""}{e.end}</span>
+              </div>
+              <div className="rc-sub">{e.school}{e.gpa ? ` · GPA: ${e.gpa}` : ""}{e.honors ? ` · ${e.honors}` : ""}</div>
+            </div>
+          ))}
+        </>}
+        {skills.length > 0 && <>
+          <h2>Skills</h2>
+          <div className="rc-skills">{skills.map((s, i) => <span key={i} className="rc-skill">{s}</span>)}</div>
+        </>}
+        {d.projects.some(p => p.name) && <>
+          <h2>Projects</h2>
+          {d.projects.filter(p => p.name).map(p => (
+            <div key={p.id} className="rc-entry">
+              <div className="rc-entry-head">
+                <span className="rc-bold">{p.name}</span>
+                {p.link && <span className="rc-date">{p.link}</span>}
+              </div>
+              {p.tech && <div className="rc-sub">Tech: {p.tech}</div>}
+              {p.description && <ul><li>{p.description}</li></ul>}
+            </div>
+          ))}
+        </>}
+        {d.certifications.some(c => c.name) && <>
+          <h2>Certifications</h2>
+          {d.certifications.filter(c => c.name).map(c => (
+            <div key={c.id} className="rc-entry">
+              <div className="rc-entry-head">
+                <span className="rc-bold">{c.name}</span>
+                <span className="rc-date">{c.date}</span>
+              </div>
+              {c.issuer && <div className="rc-sub">{c.issuer}</div>}
+            </div>
+          ))}
+        </>}
+        {achievements.length > 0 && <>
+          <h2>Achievements</h2>
+          <ul>{achievements.map((a, i) => <li key={i}>{a.replace(/^[-•]\s*/, "")}</li>)}</ul>
+        </>}
+      </div>
+    </div>
+  );
+}
+
+function ResumeModern({ d }) {
+  const skills = d.skills.split(/[,\n]+/).map(s => s.trim()).filter(Boolean);
+  const achievements = d.achievements.split("\n").filter(Boolean);
+  return (
+    <div className="resume-wrap">
+      <div className="rm">
+        <div className="rm-side">
+          <div className="rm-side-name">{d.name || "Your Name"}</div>
+          <div className="rm-side-title">{d.title || "Professional Title"}</div>
+          <h3>Contact</h3>
+          {d.email && <div className="rm-side-item">✉ {d.email}</div>}
+          {d.phone && <div className="rm-side-item">✆ {d.phone}</div>}
+          {d.location && <div className="rm-side-item">⌖ {d.location}</div>}
+          {d.website && <div className="rm-side-item">⊕ {d.website}</div>}
+          {d.linkedin && <div className="rm-side-item">in {d.linkedin}</div>}
+          {d.github && <div className="rm-side-item">⌂ {d.github}</div>}
+          {skills.length > 0 && <>
+            <h3>Skills</h3>
+            <div>{skills.map((s, i) => <span key={i} className="rm-side-skill">{s}</span>)}</div>
+          </>}
+          {d.education.some(e => e.school) && <>
+            <h3>Education</h3>
+            {d.education.filter(e => e.school).map(e => (
+              <div key={e.id} style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,.9)" }}>{e.degree}</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,.6)" }}>{e.school}</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,.45)" }}>{e.end}</div>
+              </div>
+            ))}
+          </>}
+        </div>
+        <div className="rm-main">
+          {d.summary && <>
+            <h2>Summary</h2>
+            <p className="rm-summary">{d.summary}</p>
+          </>}
+          {d.experience.some(e => e.company) && <>
+            <h2>Experience</h2>
+            {d.experience.filter(e => e.company).map(e => (
+              <div key={e.id} style={{ marginBottom: 14 }}>
+                <div className="rm-entry-head">
+                  <span className="rm-bold">{e.role}</span>
+                  <span className="rm-date">{e.start}{e.start && (e.end || e.current) ? "–" : ""}{e.current ? "Present" : e.end}</span>
+                </div>
+                <div className="rm-sub">{e.company}</div>
+                {e.bullets && <ul className="rm">{e.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i}>{b.replace(/^[-•]\s*/, "")}</li>)}</ul>}
+              </div>
+            ))}
+          </>}
+          {d.projects.some(p => p.name) && <>
+            <h2>Projects</h2>
+            {d.projects.filter(p => p.name).map(p => (
+              <div key={p.id} style={{ marginBottom: 12 }}>
+                <div className="rm-entry-head">
+                  <span className="rm-bold">{p.name}</span>
+                  {p.link && <span className="rm-date">{p.link}</span>}
+                </div>
+                {p.tech && <div className="rm-sub">{p.tech}</div>}
+                {p.description && <p style={{ fontSize: 12, color: "#334155" }}>{p.description}</p>}
+              </div>
+            ))}
+          </>}
+          {d.certifications.some(c => c.name) && <>
+            <h2>Certifications</h2>
+            {d.certifications.filter(c => c.name).map(c => (
+              <div key={c.id} style={{ marginBottom: 10 }}>
+                <div className="rm-entry-head">
+                  <span className="rm-bold">{c.name}</span>
+                  <span className="rm-date">{c.date}</span>
+                </div>
+                {c.issuer && <div style={{ fontSize: 12, color: "#64748b" }}>{c.issuer}</div>}
+              </div>
+            ))}
+          </>}
+          {achievements.length > 0 && <>
+            <h2>Achievements</h2>
+            <ul className="rm">{achievements.map((a, i) => <li key={i}>{a.replace(/^[-•]\s*/, "")}</li>)}</ul>
+          </>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ResumeMinimal({ d }) {
+  const skills = d.skills.split(/[,\n]+/).map(s => s.trim()).filter(Boolean);
+  const achievements = d.achievements.split("\n").filter(Boolean);
+  return (
+    <div className="resume-wrap">
+      <div className="rmin">
+        <div className="rmin-name">{d.name || "Your Name"}</div>
+        <div className="rmin-title">{d.title || "Professional Title"}</div>
+        <div className="rmin-contact">
+          {d.email && <span>{d.email}</span>}
+          {d.phone && <span>{d.phone}</span>}
+          {d.location && <span>{d.location}</span>}
+          {d.website && <span>{d.website}</span>}
+          {d.linkedin && <span>{d.linkedin}</span>}
+          {d.github && <span>{d.github}</span>}
+        </div>
+        {d.summary && <><h2>Profile</h2><hr /><p className="rmin-summary">{d.summary}</p></>}
+        {d.experience.some(e => e.company) && <>
+          <h2>Experience</h2><hr />
+          {d.experience.filter(e => e.company).map(e => (
+            <div key={e.id} className="rmin-entry" style={{ marginBottom: 14 }}>
+              <span className="rmin-bold">{e.role} — {e.company}</span>
+              <span className="rmin-date">{e.start}{e.start && (e.end || e.current) ? "–" : ""}{e.current ? "Present" : e.end}</span>
+              {e.bullets && <ul className="rmin" style={{ clear: "both", marginTop: 6 }}>{e.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i}>{b.replace(/^[-•]\s*/, "")}</li>)}</ul>}
+            </div>
+          ))}
+        </>}
+        {d.education.some(e => e.school) && <>
+          <h2>Education</h2><hr />
+          {d.education.filter(e => e.school).map(e => (
+            <div key={e.id} className="rmin-entry" style={{ marginBottom: 12 }}>
+              <span className="rmin-bold">{e.degree}{e.field ? ` in ${e.field}` : ""}</span>
+              <span className="rmin-date">{e.end}</span>
+              <div className="rmin-sub">{e.school}{e.gpa ? ` · GPA ${e.gpa}` : ""}</div>
+            </div>
+          ))}
+        </>}
+        {skills.length > 0 && <>
+          <h2>Skills</h2><hr />
+          <div className="rmin-skills-row">{skills.map((s, i) => <span key={i} className="rmin-skill">{s}</span>)}</div>
+        </>}
+        {d.projects.some(p => p.name) && <>
+          <h2>Projects</h2><hr />
+          {d.projects.filter(p => p.name).map(p => (
+            <div key={p.id} className="rmin-entry" style={{ marginBottom: 12 }}>
+              <span className="rmin-bold">{p.name}</span>
+              {p.link && <span className="rmin-date">{p.link}</span>}
+              {p.tech && <div className="rmin-sub">Stack: {p.tech}</div>}
+              {p.description && <ul className="rmin"><li>{p.description}</li></ul>}
+            </div>
+          ))}
+        </>}
+        {d.certifications.some(c => c.name) && <>
+          <h2>Certifications</h2><hr />
+          {d.certifications.filter(c => c.name).map(c => (
+            <div key={c.id} className="rmin-entry" style={{ marginBottom: 10 }}>
+              <span className="rmin-bold">{c.name}</span>
+              <span className="rmin-date">{c.date}</span>
+              {c.issuer && <div className="rmin-sub">{c.issuer}</div>}
+            </div>
+          ))}
+        </>}
+        {achievements.length > 0 && <>
+          <h2>Achievements</h2><hr />
+          <ul className="rmin">{achievements.map((a, i) => <li key={i}>{a.replace(/^[-•]\s*/, "")}</li>)}</ul>
+        </>}
+      </div>
+    </div>
+  );
+}
+
+const TEMPLATES = [
+  { id: "classic", label: "Classic", desc: "Traditional serif, timeless" },
+  { id: "modern", label: "Modern", desc: "Dark sidebar, bold color" },
+  { id: "minimal", label: "Minimal", desc: "Clean lines, whitespace" },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// LANDING PAGE
+// ═══════════════════════════════════════════════════════════════
+function Landing({ onStart }) {
+  const features = [
+    { icon: "⚡", title: "AI-Powered Writing", desc: "Get professional suggestions for your summary, bullet points, and more using Claude AI." },
+    { icon: "◈", title: "3 Resume Templates", desc: "Classic, Modern, and Minimal — each polished and ready for any industry." },
+    { icon: "◉", title: "Portfolio Generator", desc: "Instantly transform your resume into a full personal portfolio webpage." },
+    { icon: "◆", title: "PDF Download", desc: "Export your resume as a clean, print-ready PDF in one click." },
+    { icon: "⟡", title: "Step-by-Step Form", desc: "Guided form across 7 sections — just type in plain English." },
+    { icon: "✦", title: "Live Preview", desc: "See your resume update in real-time as you fill in your details." },
+  ];
+  return (
+    <div style={{ minHeight: "100vh" }}>
+      {/* Nav */}
+      <nav style={{ padding: "18px 0", borderBottom: "1px solid #1d3060", position: "sticky", top: 0, zIndex: 100, background: "rgba(7,11,20,.9)", backdropFilter: "blur(20px)" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 28px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: "#dde6ff" }}>
+            <span style={{ color: "#4b9fff" }}>AI</span> Résumé
+          </div>
+          <button className="btn bp" onClick={onStart}>Build My Resume →</button>
+        </div>
+      </nav>
+
+      {/* Hero */}
+      <div style={{ textAlign: "center", padding: "100px 28px 80px", position: "relative", overflow: "hidden" }}>
+        {/* Glow orbs */}
+        <div style={{ position: "absolute", top: "20%", left: "50%", transform: "translateX(-50%)", width: 600, height: 400, background: "radial-gradient(ellipse, rgba(75,159,255,.12) 0%, transparent 70%)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", top: "40%", left: "20%", width: 300, height: 300, background: "radial-gradient(circle, rgba(245,200,66,.06) 0%, transparent 70%)", animation: "glow 4s ease infinite", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", top: "30%", right: "15%", width: 250, height: 250, background: "radial-gradient(circle, rgba(124,58,237,.08) 0%, transparent 70%)", animation: "glow 4s ease infinite 2s", pointerEvents: "none" }} />
+
+        <div className="fu" style={{ position: "relative", zIndex: 1 }}>
+          <div className="chip" style={{ marginBottom: 20 }}>Powered by Claude AI</div>
+          <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: "clamp(40px, 7vw, 72px)", fontWeight: 700, lineHeight: 1.1, color: "#e8eeff", marginBottom: 20, letterSpacing: "-.01em" }}>
+            Your Resume,{" "}
+            <span style={{ background: "linear-gradient(135deg, #4b9fff, #7c3aed)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+              Reimagined
+            </span>
+          </h1>
+          <p className="fu d2" style={{ fontSize: "clamp(15px, 2.5vw, 18px)", color: "#5a7099", maxWidth: 540, margin: "0 auto 40px", lineHeight: 1.7 }}>
+            Fill out a simple form. Let AI transform your experience into a polished resume and stunning portfolio — ready in minutes.
+          </p>
+          <div className="fu d3" style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            <button className="btn bp" onClick={onStart} style={{ fontSize: 15, padding: "13px 32px" }}>
+              Start Building Free →
+            </button>
+            <button className="btn bg2" style={{ fontSize: 15, padding: "13px 28px" }}>
+              See Examples
+            </button>
+          </div>
+        </div>
+
+        {/* Floating template preview */}
+        <div className="fu d4" style={{ position: "relative", zIndex: 1, marginTop: 64, display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap" }}>
+          {["Classic", "Modern", "Minimal"].map((t, i) => (
+            <div key={t} style={{
+              background: "#0c1626", border: "1px solid #1d3060", borderRadius: 12,
+              padding: "10px 20px", fontSize: 13, color: "#5a7099",
+              animation: `float ${3 + i * 0.5}s ease-in-out infinite`,
+              animationDelay: `${i * 0.3}s`,
+              cursor: "pointer", transition: "all .2s"
+            }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "#4b9fff"; e.currentTarget.style.color = "#4b9fff"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "#1d3060"; e.currentTarget.style.color = "#5a7099"; }}
+            >
+              ◈ {t} Template
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Features */}
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 28px 100px" }}>
+        <div style={{ textAlign: "center", marginBottom: 56 }}>
+          <div className="pf-section-title" style={{ color: "#4b9fff", fontSize: 11, fontWeight: 600, letterSpacing: ".18em", textTransform: "uppercase", marginBottom: 8 }}>Everything You Need</div>
+          <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: "clamp(26px, 4vw, 38px)", fontWeight: 600, color: "#e8eeff" }}>Built for Real Job Seekers</h2>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 18 }}>
+          {features.map((f, i) => (
+            <div key={f.title} className="fu card-glow" style={{ animationDelay: `${i * 0.08}s`, padding: "28px 24px", transition: "transform .2s, border-color .2s", cursor: "default" }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; }}>
+              <div style={{ fontSize: 26, marginBottom: 12 }}>{f.icon}</div>
+              <div style={{ fontFamily: "'Fraunces', serif", fontSize: 18, fontWeight: 600, color: "#e8eeff", marginBottom: 8 }}>{f.title}</div>
+              <div style={{ fontSize: 13.5, color: "#5a7099", lineHeight: 1.6 }}>{f.desc}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* CTA Strip */}
+        <div style={{ marginTop: 64, background: "linear-gradient(135deg, #0c1626, #111e38)", border: "1px solid #1d3060", borderRadius: 20, padding: "48px 40px", textAlign: "center", position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at center, rgba(75,159,255,.08) 0%, transparent 70%)", pointerEvents: "none" }} />
+          <h3 style={{ fontFamily: "'Fraunces', serif", fontSize: 28, color: "#e8eeff", marginBottom: 12, position: "relative" }}>Ready to land your dream job?</h3>
+          <p style={{ color: "#5a7099", marginBottom: 28, position: "relative" }}>Takes less than 10 minutes. No account needed.</p>
+          <button className="btn bgold" onClick={onStart} style={{ fontSize: 15, padding: "13px 36px", position: "relative" }}>
+            Build My Resume Now ✦
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FORM STEPS
+// ═══════════════════════════════════════════════════════════════
+function PersonalStep({ data, update }) {
+  const f = (field) => ({ value: data[field], onChange: e => update(field, e.target.value) });
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div className="g2">
+        <div><label className="lbl">Full Name *</label><input type="text" placeholder="Jane Doe" {...f("name")} /></div>
+        <div><label className="lbl">Professional Title *</label><input type="text" placeholder="Senior Software Engineer" {...f("title")} /></div>
+      </div>
+      <div className="g2">
+        <div><label className="lbl">Email *</label><input type="email" placeholder="jane@example.com" {...f("email")} /></div>
+        <div><label className="lbl">Phone</label><input type="tel" placeholder="+1 555 123 4567" {...f("phone")} /></div>
+      </div>
+      <div className="g2">
+        <div><label className="lbl">Location</label><input type="text" placeholder="New York, NY" {...f("location")} /></div>
+        <div><label className="lbl">Website / Portfolio</label><input type="url" placeholder="https://janedoe.dev" {...f("website")} /></div>
+      </div>
+      <div className="g2">
+        <div><label className="lbl">LinkedIn URL</label><input type="url" placeholder="linkedin.com/in/janedoe" {...f("linkedin")} /></div>
+        <div><label className="lbl">GitHub URL</label><input type="url" placeholder="github.com/janedoe" {...f("github")} /></div>
+      </div>
+      <div>
+        <label className="lbl">Professional Summary</label>
+        <textarea rows={4} placeholder="Write a compelling 2–4 sentence summary of your professional background, key strengths, and career goals..." {...f("summary")} />
+        <div style={{ fontSize: 12, color: "#5a7099", marginTop: 5 }}>💡 Tip: Use the AI Enhance button in the preview to improve this section.</div>
+      </div>
+    </div>
+  );
+}
+
+function EducationStep({ data, update }) {
+  const addEd = () => update("education", [...data.education, { id: uid(), school: "", degree: "", field: "", start: "", end: "", gpa: "", honors: "" }]);
+  const removeEd = (id) => update("education", data.education.filter(e => e.id !== id));
+  const updateEd = (id, field, val) => update("education", data.education.map(e => e.id === id ? { ...e, [field]: val } : e));
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {data.education.map((ed, i) => (
+        <div key={ed.id} className="card" style={{ padding: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#4b9fff" }}>Education #{i + 1}</div>
+            {data.education.length > 1 && <button className="btn bsm bdanger" onClick={() => removeEd(ed.id)}>Remove</button>}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div><label className="lbl">School / University *</label><input type="text" placeholder="MIT" value={ed.school} onChange={e => updateEd(ed.id, "school", e.target.value)} /></div>
+            <div className="g2">
+              <div><label className="lbl">Degree</label><input type="text" placeholder="Bachelor of Science" value={ed.degree} onChange={e => updateEd(ed.id, "degree", e.target.value)} /></div>
+              <div><label className="lbl">Field of Study</label><input type="text" placeholder="Computer Science" value={ed.field} onChange={e => updateEd(ed.id, "field", e.target.value)} /></div>
+            </div>
+            <div className="g3">
+              <div><label className="lbl">Start Year</label><input type="text" placeholder="2018" value={ed.start} onChange={e => updateEd(ed.id, "start", e.target.value)} /></div>
+              <div><label className="lbl">End Year</label><input type="text" placeholder="2022" value={ed.end} onChange={e => updateEd(ed.id, "end", e.target.value)} /></div>
+              <div><label className="lbl">GPA (optional)</label><input type="text" placeholder="3.8 / 4.0" value={ed.gpa} onChange={e => updateEd(ed.id, "gpa", e.target.value)} /></div>
+            </div>
+            <div><label className="lbl">Honors / Activities (optional)</label><input type="text" placeholder="Dean's List, Robotics Club President" value={ed.honors} onChange={e => updateEd(ed.id, "honors", e.target.value)} /></div>
+          </div>
+        </div>
+      ))}
+      <button className="btn bgreen" onClick={addEd} style={{ alignSelf: "flex-start" }}>+ Add Another Education</button>
+    </div>
+  );
+}
+
+function SkillsStep({ data, update }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div className="card" style={{ padding: 20 }}>
+        <label className="lbl">All Skills</label>
+        <textarea rows={6} placeholder="List your skills, separated by commas or new lines:&#10;React, Node.js, Python, PostgreSQL&#10;Machine Learning, Docker, AWS&#10;Leadership, Communication, Agile" value={data.skills} onChange={e => update("skills", e.target.value)} />
+        <div style={{ fontSize: 12, color: "#5a7099", marginTop: 8, lineHeight: 1.6 }}>
+          💡 Include technical skills, tools, frameworks, soft skills, and languages. Separate with commas or line breaks.
+        </div>
+      </div>
+      {data.skills && (
+        <div className="card" style={{ padding: 20 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#5a7099", marginBottom: 10, textTransform: "uppercase", letterSpacing: ".08em" }}>Preview</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {data.skills.split(/[,\n]+/).map(s => s.trim()).filter(Boolean).map((s, i) => (
+              <span key={i} className="chip">{s}</span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ExperienceStep({ data, update }) {
+  const add = () => update("experience", [...data.experience, { id: uid(), company: "", role: "", start: "", end: "", current: false, bullets: "" }]);
+  const remove = (id) => update("experience", data.experience.filter(e => e.id !== id));
+  const upd = (id, field, val) => update("experience", data.experience.map(e => e.id === id ? { ...e, [field]: val } : e));
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {data.experience.map((ex, i) => (
+        <div key={ex.id} className="card" style={{ padding: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#4b9fff" }}>Position #{i + 1}</div>
+            {data.experience.length > 1 && <button className="btn bsm bdanger" onClick={() => remove(ex.id)}>Remove</button>}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div className="g2">
+              <div><label className="lbl">Company *</label><input type="text" placeholder="Google" value={ex.company} onChange={e => upd(ex.id, "company", e.target.value)} /></div>
+              <div><label className="lbl">Job Title *</label><input type="text" placeholder="Software Engineer" value={ex.role} onChange={e => upd(ex.id, "role", e.target.value)} /></div>
+            </div>
+            <div className="g3">
+              <div><label className="lbl">Start Date</label><input type="text" placeholder="Jan 2021" value={ex.start} onChange={e => upd(ex.id, "start", e.target.value)} /></div>
+              <div><label className="lbl">End Date</label><input type="text" placeholder="Present" value={ex.end} onChange={e => upd(ex.id, "end", e.target.value)} disabled={ex.current} /></div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 24 }}>
+                <input type="checkbox" id={`cur-${ex.id}`} checked={ex.current} onChange={e => upd(ex.id, "current", e.target.checked)} style={{ width: 16, height: 16 }} />
+                <label htmlFor={`cur-${ex.id}`} style={{ textTransform: "none", letterSpacing: 0, fontSize: 13, color: "#dde6ff", cursor: "pointer" }}>Current Role</label>
+              </div>
+            </div>
+            <div>
+              <label className="lbl">Responsibilities & Achievements</label>
+              <textarea rows={5} placeholder="• Led development of microservices architecture serving 5M+ users&#10;• Reduced API latency by 40% through query optimization&#10;• Mentored 3 junior engineers on best practices" value={ex.bullets} onChange={e => upd(ex.id, "bullets", e.target.value)} />
+              <div style={{ fontSize: 12, color: "#5a7099", marginTop: 5 }}>Use bullet points (•) for each accomplishment. Quantify results where possible.</div>
+            </div>
+          </div>
+        </div>
+      ))}
+      <button className="btn bgreen" onClick={add} style={{ alignSelf: "flex-start" }}>+ Add Another Position</button>
+    </div>
+  );
+}
+
+function ProjectsStep({ data, update }) {
+  const add = () => update("projects", [...data.projects, { id: uid(), name: "", tech: "", description: "", link: "" }]);
+  const remove = (id) => update("projects", data.projects.filter(p => p.id !== id));
+  const upd = (id, field, val) => update("projects", data.projects.map(p => p.id === id ? { ...p, [field]: val } : p));
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {data.projects.map((p, i) => (
+        <div key={p.id} className="card" style={{ padding: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#4b9fff" }}>Project #{i + 1}</div>
+            {data.projects.length > 1 && <button className="btn bsm bdanger" onClick={() => remove(p.id)}>Remove</button>}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div className="g2">
+              <div><label className="lbl">Project Name *</label><input type="text" placeholder="AI Chat Platform" value={p.name} onChange={e => upd(p.id, "name", e.target.value)} /></div>
+              <div><label className="lbl">Technologies Used</label><input type="text" placeholder="React, Node.js, OpenAI API, PostgreSQL" value={p.tech} onChange={e => upd(p.id, "tech", e.target.value)} /></div>
+            </div>
+            <div><label className="lbl">Project Link (GitHub / Live)</label><input type="url" placeholder="https://github.com/..." value={p.link} onChange={e => upd(p.id, "link", e.target.value)} /></div>
+            <div><label className="lbl">Description *</label><textarea rows={3} placeholder="Describe what you built, the problem it solves, and key technical achievements..." value={p.description} onChange={e => upd(p.id, "description", e.target.value)} /></div>
+          </div>
+        </div>
+      ))}
+      <button className="btn bgreen" onClick={add} style={{ alignSelf: "flex-start" }}>+ Add Another Project</button>
+    </div>
+  );
+}
+
+function CertificationsStep({ data, update }) {
+  const add = () => update("certifications", [...data.certifications, { id: uid(), name: "", issuer: "", date: "" }]);
+  const remove = (id) => update("certifications", data.certifications.filter(c => c.id !== id));
+  const upd = (id, field, val) => update("certifications", data.certifications.map(c => c.id === id ? { ...c, [field]: val } : c));
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {data.certifications.map((c, i) => (
+        <div key={c.id} className="card" style={{ padding: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#4b9fff" }}>Certification #{i + 1}</div>
+            {data.certifications.length > 1 && <button className="btn bsm bdanger" onClick={() => remove(c.id)}>Remove</button>}
+          </div>
+          <div className="g3">
+            <div><label className="lbl">Certification Name *</label><input type="text" placeholder="AWS Solutions Architect" value={c.name} onChange={e => upd(c.id, "name", e.target.value)} /></div>
+            <div><label className="lbl">Issuing Organization</label><input type="text" placeholder="Amazon Web Services" value={c.issuer} onChange={e => upd(c.id, "issuer", e.target.value)} /></div>
+            <div><label className="lbl">Date Earned</label><input type="text" placeholder="Mar 2024" value={c.date} onChange={e => upd(c.id, "date", e.target.value)} /></div>
+          </div>
+        </div>
+      ))}
+      <button className="btn bgreen" onClick={add} style={{ alignSelf: "flex-start" }}>+ Add Another Certification</button>
+    </div>
+  );
+}
+
+function AchievementsStep({ data, update }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div className="card" style={{ padding: 20 }}>
+        <label className="lbl">Achievements, Awards & Honors</label>
+        <textarea rows={8} placeholder="• Won 1st Place at HackMIT 2023 among 500+ participants&#10;• Published research paper on NLP in IEEE journal (cited 120+ times)&#10;• Dean's List for 6 consecutive semesters&#10;• Promoted to Team Lead within 18 months of joining&#10;• Grew startup's user base from 0 to 50K in 12 months" value={data.achievements} onChange={e => update("achievements", e.target.value)} />
+        <div style={{ fontSize: 12, color: "#5a7099", marginTop: 8, lineHeight: 1.6 }}>
+          💡 Include awards, scholarships, publications, speaking engagements, open-source contributions, or any notable recognition.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FORM WIZARD
+// ═══════════════════════════════════════════════════════════════
+function FormWizard({ data, setData, onPreview, onBack }) {
+  const [step, setStep] = useState(0);
+  const [animKey, setAnimKey] = useState(0);
+
+  const update = useCallback((field, value) => {
+    setData(d => ({ ...d, [field]: value }));
+  }, [setData]);
+
+  const goStep = (n) => {
+    setStep(n);
+    setAnimKey(k => k + 1);
+  };
+
+  const progress = ((step) / (STEPS.length - 1)) * 100;
+
+  const StepContent = [PersonalStep, EducationStep, SkillsStep, ExperienceStep, ProjectsStep, CertificationsStep, AchievementsStep][step];
+
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      {/* Header */}
+      <div style={{ padding: "16px 0", borderBottom: "1px solid #1d3060", background: "rgba(7,11,20,.9)", backdropFilter: "blur(20px)", position: "sticky", top: 0, zIndex: 100 }}>
+        <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <button className="btn bg2 bsm" onClick={onBack}>← Back</button>
+          <div style={{ fontFamily: "'Fraunces', serif", fontSize: 17, color: "#dde6ff" }}>
+            <span style={{ color: "#4b9fff" }}>AI</span> Résumé Builder
+          </div>
+          <button className="btn bp bsm" onClick={onPreview}>Preview Resume →</button>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 900, margin: "0 auto", width: "100%", padding: "32px 24px", flex: 1 }}>
+        {/* Progress */}
+        <div style={{ marginBottom: 32 }}>
+          {/* Steps indicator */}
+          <div style={{ display: "flex", gap: 6, marginBottom: 16, overflowX: "auto", paddingBottom: 4 }}>
+            {STEPS.map((s, i) => (
+              <button key={s} onClick={() => goStep(i)} style={{
+                display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, border: "none",
+                background: i === step ? "rgba(75,159,255,.15)" : "transparent",
+                color: i === step ? "#4b9fff" : i < step ? "#34d89a" : "#5a7099",
+                cursor: "pointer", whiteSpace: "nowrap", fontSize: 12.5, fontFamily: "'Outfit',sans-serif", fontWeight: 500,
+                borderBottom: i === step ? "2px solid #4b9fff" : i < step ? "2px solid #34d89a" : "2px solid transparent",
+                transition: "all .2s"
+              }}>
+                <span>{i < step ? "✓" : STEP_ICONS[i]}</span>
+                <span style={{ display: "block" }}>{s}</span>
+              </button>
+            ))}
+          </div>
+          {/* Progress bar */}
+          <div style={{ height: 3, background: "#1d3060", borderRadius: 3, overflow: "hidden" }}>
+            <div style={{ height: "100%", background: "linear-gradient(90deg, #4b9fff, #7c3aed)", borderRadius: 3, width: `${((step + 1) / STEPS.length) * 100}%`, transition: "width .4s cubic-bezier(.16,1,.3,1)" }} />
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
+            <div style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 600, color: "#e8eeff" }}>
+              {STEP_ICONS[step]} {STEPS[step]}
+            </div>
+            <div style={{ fontSize: 12, color: "#5a7099" }}>Step {step + 1} of {STEPS.length}</div>
+          </div>
+        </div>
+
+        {/* Step Content */}
+        <div key={animKey} className="fu">
+          <StepContent data={data} update={update} />
+        </div>
+
+        {/* Navigation */}
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 32, paddingTop: 24, borderTop: "1px solid #1d3060" }}>
+          <button className="btn bg2" onClick={() => step > 0 ? goStep(step - 1) : onBack()}>
+            ← {step === 0 ? "Home" : "Previous"}
+          </button>
+          <div style={{ display: "flex", gap: 10 }}>
+            {step < STEPS.length - 1
+              ? <button className="btn bp" onClick={() => goStep(step + 1)}>Next: {STEPS[step + 1]} →</button>
+              : <button className="btn bgold" onClick={onPreview}>Preview My Resume ✦</button>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AI ENHANCEMENT PANEL
+// ═══════════════════════════════════════════════════════════════
+function AIPanel({ data, onApply }) {
+  const [field, setField] = useState("summary");
+  const [prompt, setPrompt] = useState("");
+  const [result, setResult] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const FIELDS = [
+    { id: "summary", label: "Professional Summary" },
+    { id: "achievements", label: "Achievements" },
+  ];
+
+  const enhance = async () => {
+    setLoading(true);
+    setError("");
+    setResult("");
+    try {
+      const currentVal = data[field] || "";
+      const resp = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          messages: [{
+            role: "user",
+            content: `You are an expert resume writer and career coach. Improve the following "${field}" section for a resume.
+
+Current content:
+${currentVal || "(empty)"}
+
+Job title / context: ${data.title || "Professional"}
+Additional instructions: ${prompt || "Make it more compelling, professional, and achievement-oriented."}
+
+Rules:
+- Return ONLY the improved text, no explanations or meta-commentary
+- Keep the same general format (bullets for bullets, paragraphs for paragraphs)
+- Use strong action verbs and quantify achievements where possible
+- Make it ATS-friendly and recruiter-optimized`
+          }]
+        })
+      });
+      const json = await resp.json();
+      if (json.error) throw new Error(json.error.message);
+      setResult(json.content[0].text);
+    } catch (e) {
+      setError("Error: " + e.message);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="card" style={{ padding: 24 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+        <span style={{ fontSize: 18 }}>✦</span>
+        <div style={{ fontFamily: "'Fraunces', serif", fontSize: 18, color: "#e8eeff" }}>AI Enhancement</div>
+        <span className="chip" style={{ marginLeft: "auto" }}>Claude AI</span>
+      </div>
+
+      <div style={{ marginBottom: 14 }}>
+        <label className="lbl">Section to Improve</label>
+        <select value={field} onChange={e => setField(e.target.value)}>
+          {FIELDS.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}
+        </select>
+      </div>
+
+      <div style={{ marginBottom: 14 }}>
+        <label className="lbl">Additional Instructions (optional)</label>
+        <input type="text" placeholder="e.g. Focus on leadership impact, make it more concise..." value={prompt} onChange={e => setPrompt(e.target.value)} />
+      </div>
+
+      <button className="btn bp" onClick={enhance} disabled={loading} style={{ width: "100%", justifyContent: "center" }}>
+        {loading ? <><span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}>◌</span> Enhancing...</> : "✦ Enhance with AI"}
+      </button>
+
+      {error && <div style={{ marginTop: 12, padding: 12, background: "rgba(248,113,113,.1)", border: "1px solid rgba(248,113,113,.2)", borderRadius: 8, fontSize: 13, color: "#f87171" }}>{error}</div>}
+
+      {result && (
+        <div style={{ marginTop: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: "#34d89a", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 8 }}>AI Suggestion</div>
+          <div style={{ background: "#0c1626", border: "1px solid rgba(52,216,154,.2)", borderRadius: 10, padding: 14, fontSize: 13, color: "#dde6ff", lineHeight: 1.6, whiteSpace: "pre-wrap", marginBottom: 12 }}>{result}</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="btn bgreen bsm" onClick={() => { onApply(field, result); setResult(""); }}>✓ Apply to Resume</button>
+            <button className="btn bg2 bsm" onClick={() => setResult("")}>Discard</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PREVIEW PAGE
+// ═══════════════════════════════════════════════════════════════
+function PreviewPage({ data, setData, onBack, onForm, onPortfolio }) {
+  const [template, setTemplate] = useState("modern");
+
+  const applyAI = (field, val) => setData(d => ({ ...d, [field]: val }));
+
+  const downloadPDF = () => {
+    const zone = document.getElementById("print-zone");
+    const src = document.getElementById("resume-render");
+    if (zone && src) {
+      zone.innerHTML = src.innerHTML;
+      window.print();
+      setTimeout(() => { zone.innerHTML = ""; }, 500);
+    }
+  };
+
+  const ResumeComp = { classic: ResumeClassic, modern: ResumeModern, minimal: ResumeMinimal }[template];
+
+  return (
+    <div style={{ minHeight: "100vh" }}>
+      {/* Header */}
+      <div style={{ padding: "14px 0", borderBottom: "1px solid #1d3060", background: "rgba(7,11,20,.95)", backdropFilter: "blur(20px)", position: "sticky", top: 0, zIndex: 100 }}>
+        <div style={{ maxWidth: 1240, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <button className="btn bg2 bsm" onClick={onBack}>← Back</button>
+            <button className="btn bg2 bsm" onClick={onForm}>✎ Edit</button>
+          </div>
+          <div style={{ fontFamily: "'Fraunces', serif", fontSize: 16, color: "#dde6ff" }}>
+            <span style={{ color: "#4b9fff" }}>AI</span> Résumé — Preview
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="btn bg2 bsm" onClick={onPortfolio}>◉ Portfolio View</button>
+            <button className="btn bgold bsm" onClick={downloadPDF}>⬇ Download PDF</button>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 1240, margin: "0 auto", padding: "32px 24px", display: "grid", gridTemplateColumns: "1fr 340px", gap: 24 }}>
+        {/* Resume Preview */}
+        <div>
+          {/* Template selector */}
+          <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
+            {TEMPLATES.map(t => (
+              <button key={t.id} onClick={() => setTemplate(t.id)} style={{
+                padding: "8px 16px", borderRadius: 9, border: `1px solid ${template === t.id ? "#4b9fff" : "#1d3060"}`,
+                background: template === t.id ? "rgba(75,159,255,.12)" : "transparent",
+                color: template === t.id ? "#4b9fff" : "#5a7099", fontSize: 13, cursor: "pointer",
+                fontFamily: "'Outfit',sans-serif", transition: "all .2s", fontWeight: template === t.id ? 600 : 400
+              }}>
+                {t.label}
+                <span style={{ fontSize: 11, marginLeft: 6, opacity: .7 }}>{t.desc}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Resume */}
+          <div id="resume-render">
+            <ResumeComp d={data} />
+          </div>
+        </div>
+
+        {/* Side Panel */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          {/* Quick Actions */}
+          <div className="card" style={{ padding: 20 }}>
+            <div style={{ fontFamily: "'Fraunces', serif", fontSize: 16, color: "#e8eeff", marginBottom: 14 }}>Quick Actions</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <button className="btn bgold" onClick={downloadPDF} style={{ justifyContent: "center" }}>⬇ Download as PDF</button>
+              <button className="btn bg2" onClick={onPortfolio} style={{ justifyContent: "center" }}>◉ View Portfolio Page</button>
+              <button className="btn bg2" onClick={onForm} style={{ justifyContent: "center" }}>✎ Edit Information</button>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="card" style={{ padding: 20 }}>
+            <div style={{ fontFamily: "'Fraunces', serif", fontSize: 16, color: "#e8eeff", marginBottom: 14 }}>Resume Stats</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {[
+                { label: "Sections Complete", val: [data.name, data.summary, data.skills, data.experience[0]?.company, data.education[0]?.school, data.projects[0]?.name].filter(Boolean).length + " / 6" },
+                { label: "Work Experience", val: data.experience.filter(e => e.company).length + " positions" },
+                { label: "Projects", val: data.projects.filter(p => p.name).length + " listed" },
+                { label: "Skills", val: data.skills.split(/[,\n]+/).filter(s => s.trim()).length + " skills" },
+              ].map(s => (
+                <div key={s.label} style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                  <span style={{ color: "#5a7099" }}>{s.label}</span>
+                  <span style={{ color: "#4b9fff", fontWeight: 600 }}>{s.val}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* AI Panel */}
+          <AIPanel data={data} onApply={applyAI} />
+        </div>
+      </div>
+
+      {/* Hidden print zone */}
+      <div id="print-zone" />
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PORTFOLIO VIEW
+// ═══════════════════════════════════════════════════════════════
+function PortfolioView({ data, onBack }) {
+  const skills = data.skills.split(/[,\n]+/).map(s => s.trim()).filter(Boolean);
+  const navLinks = ["About", "Skills", "Experience", "Projects", "Certifications", "Contact"];
+
+  return (
+    <div className="pf-root">
+      {/* Nav */}
+      <nav className="pf-nav">
+        <div className="pf-container" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ fontFamily: "'Fraunces', serif", fontSize: 18, fontWeight: 600 }}>
+            <span style={{ color: "#4b9fff" }}>{data.name ? data.name.split(" ")[0] : "Portfolio"}</span>
+            {data.name && data.name.split(" ").length > 1 && <span> {data.name.split(" ").slice(1).join(" ")}</span>}
+          </div>
+          <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+            {navLinks.map(l => (
+              <a key={l} href={`#pf-${l.toLowerCase()}`} style={{ fontSize: 13, color: "#5a7099", textDecoration: "none", transition: "color .2s" }}
+                onMouseEnter={e => e.target.style.color = "#4b9fff"} onMouseLeave={e => e.target.style.color = "#5a7099"}>
+                {l}
+              </a>
+            ))}
+          </div>
+          <button className="btn bg2 bsm" onClick={onBack}>← Resume</button>
+        </div>
+      </nav>
+
+      {/* Hero */}
+      <div id="pf-about" className="pf-hero" style={{ position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 50% 0%, rgba(75,159,255,.15) 0%, transparent 60%)", pointerEvents: "none" }} />
+        {/* Floating elements */}
+        {[...Array(6)].map((_, i) => (
+          <div key={i} style={{
+            position: "absolute", width: 4, height: 4, borderRadius: "50%", background: "#4b9fff",
+            opacity: 0.3, top: `${20 + i * 12}%`, left: `${10 + i * 15}%`,
+            animation: `glow ${2 + i * 0.5}s ease infinite ${i * 0.3}s`
+          }} />
+        ))}
+        <div className="pf-container" style={{ position: "relative", zIndex: 1 }}>
+          {/* Avatar initials */}
+          <div style={{
+            width: 90, height: 90, borderRadius: "50%", background: "linear-gradient(135deg, #4b9fff, #7c3aed)",
+            display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px",
+            fontFamily: "'Fraunces', serif", fontSize: 30, color: "white", fontWeight: 700,
+            boxShadow: "0 0 40px rgba(75,159,255,.4)"
+          }}>
+            {data.name ? data.name.split(" ").map(n => n[0]).slice(0, 2).join("") : "?"}
+          </div>
+          <div className="fu" style={{ fontSize: 11, fontWeight: 600, letterSpacing: ".2em", textTransform: "uppercase", color: "#4b9fff", marginBottom: 10 }}>
+            Available for Opportunities
+          </div>
+          <h1 className="fu d1" style={{ fontFamily: "'Fraunces', serif", fontSize: "clamp(36px, 6vw, 62px)", fontWeight: 700, color: "#e8eeff", marginBottom: 12, letterSpacing: "-.01em" }}>
+            {data.name || "Your Name"}
+          </h1>
+          <div className="fu d2" style={{ fontSize: 18, color: "#5a7099", marginBottom: 20 }}>{data.title || "Professional Title"}</div>
+          {data.summary && (
+            <p className="fu d3" style={{ fontSize: 16, color: "#8a9fc0", maxWidth: 620, margin: "0 auto 32px", lineHeight: 1.7 }}>
+              {data.summary}
+            </p>
+          )}
+          <div className="fu d4" style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            {data.email && <a href={`mailto:${data.email}`} className="btn bg2" style={{ textDecoration: "none" }}>✉ {data.email}</a>}
+            {data.linkedin && <a href={data.linkedin} target="_blank" rel="noreferrer" className="btn bg2" style={{ textDecoration: "none" }}>in LinkedIn</a>}
+            {data.github && <a href={data.github} target="_blank" rel="noreferrer" className="btn bg2" style={{ textDecoration: "none" }}>⌂ GitHub</a>}
+          </div>
+        </div>
+      </div>
+
+      {/* Skills */}
+      {skills.length > 0 && (
+        <div id="pf-skills" className="pf-section pf-section-alt">
+          <div className="pf-container">
+            <div className="pf-section-title">What I Do</div>
+            <h2 className="pf-section-h">Skills & Technologies</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12 }}>
+              {skills.map((s, i) => (
+                <div key={i} className="pf-card" style={{ animationDelay: `${i * 0.04}s` }}>
+                  <div style={{ fontSize: 13, color: "#dde6ff", marginBottom: 6 }}>{s}</div>
+                  <div className="pf-skill-bar">
+                    <div className="pf-skill-fill" style={{ width: `${65 + (i % 3) * 10}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Experience */}
+      {data.experience.some(e => e.company) && (
+        <div id="pf-experience" className="pf-section">
+          <div className="pf-container">
+            <div className="pf-section-title">Career Path</div>
+            <h2 className="pf-section-h">Work Experience</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {data.experience.filter(e => e.company).map((ex, i) => (
+                <div key={ex.id} className="pf-card" style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 16 }}>
+                  <div>
+                    <div style={{ fontFamily: "'Fraunces', serif", fontSize: 18, color: "#e8eeff", marginBottom: 4 }}>{ex.role}</div>
+                    <div style={{ fontSize: 14, color: "#4b9fff", marginBottom: 10, fontWeight: 500 }}>{ex.company}</div>
+                    {ex.bullets && (
+                      <ul style={{ paddingLeft: 18, color: "#8a9fc0", fontSize: 13.5, lineHeight: 1.7 }}>
+                        {ex.bullets.split("\n").filter(Boolean).map((b, j) => <li key={j} style={{ marginBottom: 4 }}>{b.replace(/^[-•]\s*/, "")}</li>)}
+                      </ul>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 12, color: "#5a7099", whiteSpace: "nowrap", textAlign: "right" }}>
+                    <div style={{ background: "rgba(75,159,255,.1)", border: "1px solid rgba(75,159,255,.2)", borderRadius: 6, padding: "4px 10px" }}>
+                      {ex.start}{ex.start && (ex.end || ex.current) ? " – " : ""}{ex.current ? "Present" : ex.end}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Projects */}
+      {data.projects.some(p => p.name) && (
+        <div id="pf-projects" className="pf-section pf-section-alt">
+          <div className="pf-container">
+            <div className="pf-section-title">What I've Built</div>
+            <h2 className="pf-section-h">Projects</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 18 }}>
+              {data.projects.filter(p => p.name).map(p => (
+                <div key={p.id} className="pf-card" style={{ display: "flex", flexDirection: "column" }}>
+                  <div style={{ fontFamily: "'Fraunces', serif", fontSize: 18, color: "#e8eeff", marginBottom: 8 }}>{p.name}</div>
+                  {p.tech && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
+                      {p.tech.split(/[,]+/).map(t => t.trim()).filter(Boolean).map((t, i) => (
+                        <span key={i} className="chip" style={{ fontSize: 11 }}>{t}</span>
+                      ))}
+                    </div>
+                  )}
+                  {p.description && <p style={{ fontSize: 13, color: "#8a9fc0", lineHeight: 1.6, flex: 1 }}>{p.description}</p>}
+                  {p.link && (
+                    <a href={p.link} target="_blank" rel="noreferrer" style={{ marginTop: 14, fontSize: 12, color: "#4b9fff", textDecoration: "none", display: "flex", alignItems: "center", gap: 5 }}>
+                      ⊕ View Project →
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Certifications */}
+      {data.certifications.some(c => c.name) && (
+        <div id="pf-certifications" className="pf-section">
+          <div className="pf-container">
+            <div className="pf-section-title">Credentials</div>
+            <h2 className="pf-section-h">Certifications</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
+              {data.certifications.filter(c => c.name).map(c => (
+                <div key={c.id} className="pf-card" style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+                  <div style={{ fontSize: 28, lineHeight: 1, marginTop: 2 }}>★</div>
+                  <div>
+                    <div style={{ fontSize: 15, color: "#dde6ff", fontWeight: 600, marginBottom: 3 }}>{c.name}</div>
+                    {c.issuer && <div style={{ fontSize: 12.5, color: "#5a7099" }}>{c.issuer}</div>}
+                    {c.date && <div style={{ fontSize: 12, color: "#4b9fff", marginTop: 4 }}>{c.date}</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Contact */}
+      <div id="pf-contact" className="pf-section pf-section-alt">
+        <div className="pf-container" style={{ textAlign: "center" }}>
+          <div className="pf-section-title">Get In Touch</div>
+          <h2 className="pf-section-h">Contact Me</h2>
+          <p style={{ color: "#5a7099", marginBottom: 32, fontSize: 15 }}>I'm open to new opportunities and collaborations.</p>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            {data.email && <a href={`mailto:${data.email}`} className="btn bp" style={{ textDecoration: "none", padding: "13px 28px" }}>✉ Send Email</a>}
+            {data.linkedin && <a href={data.linkedin} target="_blank" rel="noreferrer" className="btn bg2" style={{ textDecoration: "none", padding: "13px 28px" }}>in LinkedIn</a>}
+            {data.github && <a href={data.github} target="_blank" rel="noreferrer" className="btn bg2" style={{ textDecoration: "none", padding: "13px 28px" }}>⌂ GitHub</a>}
+            {data.website && <a href={data.website} target="_blank" rel="noreferrer" className="btn bg2" style={{ textDecoration: "none", padding: "13px 28px" }}>⊕ Website</a>}
+          </div>
+          {data.location && <p style={{ marginTop: 24, color: "#3a5070", fontSize: 13 }}>📍 {data.location}</p>}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div style={{ borderTop: "1px solid #1d3060", padding: "24px", textAlign: "center", color: "#3a5070", fontSize: 12 }}>
+        Built with <span style={{ color: "#4b9fff" }}>AI Résumé Builder</span> · {data.name || "Portfolio"}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN APP
+// ═══════════════════════════════════════════════════════════════
+export default function App() {
+  const [view, setView] = useState("landing");
+  const [data, setData] = useState(initData());
+
+  // Inject CSS
+  useEffect(() => {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,300&family=Outfit:wght@300;400;500;600;700&display=swap";
+    document.head.appendChild(link);
+
+    const style = document.createElement("style");
+    style.textContent = CSS;
+    document.head.appendChild(style);
+
+    return () => {
+      try { document.head.removeChild(link); } catch {}
+      try { document.head.removeChild(style); } catch {}
+    };
+  }, []);
+
+  if (view === "landing") return <Landing onStart={() => setView("form")} />;
+  if (view === "form") return <FormWizard data={data} setData={setData} onPreview={() => setView("preview")} onBack={() => setView("landing")} />;
+  if (view === "preview") return <PreviewPage data={data} setData={setData} onBack={() => setView("landing")} onForm={() => setView("form")} onPortfolio={() => setView("portfolio")} />;
+  if (view === "portfolio") return <PortfolioView data={data} onBack={() => setView("preview")} />;
+  return null;
+}
